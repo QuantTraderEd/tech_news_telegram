@@ -47,7 +47,7 @@ CHANNEL_URLS = [
     "bornlupin",
 ]
 
-TARGET_DATE_STR = '20260716'  # 추출하고자 하는 특정 일자 (YYYYMMDD 형식)
+TARGET_DATE_STR = '20260717'  # 추출하고자 하는 특정 일자 (YYYYMMDD 형식)
 OUTPUT_DIR = 'data'
 
 
@@ -171,6 +171,6 @@ if __name__ == "__main__":
         # JSON 저장
         if scraped_messages:
             output_filename = f"telegram_{channel_url}_{TARGET_DATE_STR}.json"
-            output_path = os.path.join(OUTPUT_DIR, output_filename)
+            output_path = os.path.join(OUTPUT_DIR, TARGET_DATE_STR, output_filename)
             save_to_json(scraped_messages, output_path)
         logger.info(f"===== {channel_url} 채널 수집 종료 =====")
