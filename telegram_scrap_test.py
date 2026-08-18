@@ -43,6 +43,7 @@ CHANNEL_URLS = [
     "Samsung_Global_AI_SW",
     "samsungpe",
     "ss_global_aerospace",
+    "growth_semi",
     "aetherjapanresearch",
     "bornlupin",
 ]
