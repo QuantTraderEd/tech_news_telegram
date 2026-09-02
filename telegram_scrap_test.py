@@ -4,6 +4,7 @@ import site
 import logging
 import json
 import datetime as dt
+import argparse
 
 from telethon.sync import TelegramClient
 
@@ -38,7 +39,7 @@ except KeyError as e:
     exit()
 
 
-# 수집할 채널 주소 및 타겟 일자 설정
+# 수집할 채널 주소 및 출력 디렉토리 설정
 CHANNEL_URLS = [
     "Samsung_Global_AI_SW",
     "samsungpe",
@@ -48,7 +49,6 @@ CHANNEL_URLS = [
     "bornlupin",
 ]
 
-TARGET_DATE_STR = '20260717'  # 추출하고자 하는 특정 일자 (YYYYMMDD 형식)
 OUTPUT_DIR = 'data'
 
 
@@ -158,6 +158,34 @@ def save_to_json(data, filename):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="특정 일자의 텔레그램 채널 메시지를 수집합니다.")
+    parser.add_argument(
+        "--date", "-d",
+        type=str,
+        default=None,
+        help="추출하고자 하는 타겟 일자 (YYYYMMDD 형식, 기본값: 오늘 날짜)"
+    )
+    parser.add_argument(
+        "positional_date",
+        nargs="?",
+        type=str,
+        default=None,
+        help="추출하고자 하는 타겟 일자 (위치 인자, YYYYMMDD 형식)"
+    )
+    args = parser.parse_args()
+
+    # 인자 우선순위: --date/-d -> positional_date -> 오늘 날짜
+    target_date_str = args.date or args.positional_date or dt.datetime.now().strftime("%Y%m%d")
+
+    # 날짜 유효성 검사
+    try:
+        dt.datetime.strptime(target_date_str, "%Y%m%d")
+    except ValueError:
+        logger.error(f"❌ 날짜 형식이 잘못되었습니다: '{target_date_str}'. YYYYMMDD 형식으로 입력해주세요. (예: 20260724)")
+        sys.exit(1)
+
+    logger.info(f"📅 대상 수집 일자: {target_date_str}")
+
     for channel_url in CHANNEL_URLS:
         logger.info(f"\n===== {channel_url} 채널 수집 시작 =====")
         # 메시지 수집
@@ -166,12 +194,12 @@ if __name__ == "__main__":
             api_hash=API_HASH,
             phone=PHONE_NUMBER,
             channel_url=channel_url,
-            target_date_str=TARGET_DATE_STR
+            target_date_str=target_date_str
         )
 
         # JSON 저장
         if scraped_messages:
-            output_filename = f"telegram_{channel_url}_{TARGET_DATE_STR}.json"
-            output_path = os.path.join(OUTPUT_DIR, TARGET_DATE_STR, output_filename)
+            output_filename = f"telegram_{channel_url}_{target_date_str}.json"
+            output_path = os.path.join(OUTPUT_DIR, target_date_str, output_filename)
             save_to_json(scraped_messages, output_path)
         logger.info(f"===== {channel_url} 채널 수집 종료 =====")
