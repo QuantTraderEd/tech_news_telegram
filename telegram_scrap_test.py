@@ -14,6 +14,8 @@ pjt_home_path = os.path.join(src_path)
 pjt_home_path = os.path.abspath(pjt_home_path)
 site.addsitedir(pjt_home_path)
 
+from src.gcs_upload_json import upload_local_file_to_gcs
+
 # 로깅 설정
 logger = logging.getLogger(__file__)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -145,7 +147,7 @@ def save_to_json(data, filename):
     """
     if not data:
         logger.warning("⚠️ 저장할 데이터가 없습니다.")
-        return
+        return False
 
     try:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -153,8 +155,10 @@ def save_to_json(data, filename):
             # ensure_ascii=False 를 통해 한글 깨짐 방지
             json.dump(data, f, ensure_ascii=False, indent=4)
         logger.info(f"💾 총 {len(data)}개의 메시지가 '{filename}'에 성공적으로 저장되었습니다.")
+        return True
     except Exception as e:
         logger.error(f"❌ 파일 저장 중 오류가 발생했습니다: {e}")
+        return False
 
 
 if __name__ == "__main__":
@@ -197,9 +201,15 @@ if __name__ == "__main__":
             target_date_str=target_date_str
         )
 
-        # JSON 저장
+        # JSON 저장 및 GCS 업로드
         if scraped_messages:
             output_filename = f"telegram_{channel_url}_{target_date_str}.json"
             output_path = os.path.join(OUTPUT_DIR, target_date_str, output_filename)
-            save_to_json(scraped_messages, output_path)
+            if save_to_json(scraped_messages, output_path):
+                upload_local_file_to_gcs(
+                    local_file_path=output_path,
+                    bucket_name='gcs-private-pjt-data',
+                    gcs_base_path='news_data',
+                    date_str=target_date_str
+                )
         logger.info(f"===== {channel_url} 채널 수집 종료 =====")
