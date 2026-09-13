@@ -161,25 +161,12 @@ def save_to_json(data, filename):
         return False
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="특정 일자의 텔레그램 채널 메시지를 수집합니다.")
-    parser.add_argument(
-        "--date", "-d",
-        type=str,
-        default=None,
-        help="추출하고자 하는 타겟 일자 (YYYYMMDD 형식, 기본값: 오늘 날짜)"
-    )
-    parser.add_argument(
-        "positional_date",
-        nargs="?",
-        type=str,
-        default=None,
-        help="추출하고자 하는 타겟 일자 (위치 인자, YYYYMMDD 형식)"
-    )
-    args = parser.parse_args()
-
-    # 인자 우선순위: --date/-d -> positional_date -> 오늘 날짜
-    target_date_str = args.date or args.positional_date or dt.datetime.now().strftime("%Y%m%d")
+def main(target_date_str: str = None):
+    """
+    지정된 일자의 텔레그램 채널 메시지를 수집하고 GCS에 업로드합니다.
+    """
+    if target_date_str is None:
+        target_date_str = dt.datetime.now().strftime("%Y%m%d")
 
     # 날짜 유효성 검사
     try:
@@ -205,7 +192,8 @@ if __name__ == "__main__":
         if scraped_messages:
             output_filename = f"telegram_{channel_url}_{target_date_str}.json"
             output_path = os.path.join(OUTPUT_DIR, target_date_str, output_filename)
-            if save_to_json(scraped_messages, output_path):
+            result = save_to_json(scraped_messages, output_path)
+            if result:
                 upload_local_file_to_gcs(
                     local_file_path=output_path,
                     bucket_name='gcs-private-pjt-data',
@@ -213,3 +201,27 @@ if __name__ == "__main__":
                     date_str=target_date_str
                 )
         logger.info(f"===== {channel_url} 채널 수집 종료 =====")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="특정 일자의 텔레그램 채널 메시지를 수집합니다.")
+    parser.add_argument(
+        "--date", "-d",
+        type=str,
+        default=None,
+        help="추출하고자 하는 타겟 일자 (YYYYMMDD 형식, 기본값: 오늘 날짜)"
+    )
+    parser.add_argument(
+        "positional_date",
+        nargs="?",
+        type=str,
+        default=None,
+        help="추출하고자 하는 타겟 일자 (위치 인자, YYYYMMDD 형식)"
+    )
+    args = parser.parse_args()
+
+    # 인자 우선순위: --date/-d -> positional_date -> 오늘 날짜
+    target_date_str = args.date or args.positional_date or dt.datetime.now().strftime("%Y%m%d")
+
+    main(target_date_str)
+
