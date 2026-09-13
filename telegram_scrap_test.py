@@ -161,9 +161,12 @@ def save_to_json(data, filename):
         return False
 
 
-def main(target_date_str: str = None):
+def main(target_date_str: str = None, upload_gcs: bool = True):
     """
     지정된 일자의 텔레그램 채널 메시지를 수집하고 GCS에 업로드합니다.
+
+    :param target_date_str: 타겟 일자 (YYYYMMDD 형식, 기본값: 오늘 날짜)
+    :param upload_gcs: GCS 업로드 수행 여부 (기본값: True)
     """
     if target_date_str is None:
         target_date_str = dt.datetime.now().strftime("%Y%m%d")
@@ -175,7 +178,7 @@ def main(target_date_str: str = None):
         logger.error(f"❌ 날짜 형식이 잘못되었습니다: '{target_date_str}'. YYYYMMDD 형식으로 입력해주세요. (예: 20260724)")
         sys.exit(1)
 
-    logger.info(f"📅 대상 수집 일자: {target_date_str}")
+    logger.info(f"📅 대상 수집 일자: {target_date_str} (GCS 업로드: {'활성화' if upload_gcs else '비활성화'})")
 
     for channel_url in CHANNEL_URLS:
         logger.info(f"\n===== {channel_url} 채널 수집 시작 =====")
@@ -194,12 +197,15 @@ def main(target_date_str: str = None):
             output_path = os.path.join(OUTPUT_DIR, target_date_str, output_filename)
             result = save_to_json(scraped_messages, output_path)
             if result:
-                upload_local_file_to_gcs(
-                    local_file_path=output_path,
-                    bucket_name='gcs-private-pjt-data',
-                    gcs_base_path='news_data',
-                    date_str=target_date_str
-                )
+                if upload_gcs:
+                    upload_local_file_to_gcs(
+                        local_file_path=output_path,
+                        bucket_name='gcs-private-pjt-data',
+                        gcs_base_path='news_data',
+                        date_str=target_date_str
+                    )
+                else:
+                    logger.info("ℹ️ GCS 업로드 옵션이 꺼져 있어 로컬 파일 저장 후 업로드를 건너뜁니다.")
         logger.info(f"===== {channel_url} 채널 수집 종료 =====")
 
 
@@ -218,10 +224,31 @@ if __name__ == "__main__":
         default=None,
         help="추출하고자 하는 타겟 일자 (위치 인자, YYYYMMDD 형식)"
     )
+    try:
+        parser.add_argument(
+            "--upload-gcs",
+            action=argparse.BooleanOptionalAction,
+            default=True,
+            help="GCS 업로드 여부 (--upload-gcs / --no-upload-gcs, 기본값: True)"
+        )
+    except AttributeError:
+        parser.add_argument(
+            "--upload-gcs",
+            dest="upload_gcs",
+            action="store_true",
+            default=True,
+            help="GCS 업로드 활성화 (기본값: True)"
+        )
+        parser.add_argument(
+            "--no-upload-gcs",
+            dest="upload_gcs",
+            action="store_false",
+            help="GCS 업로드 비활성화"
+        )
     args = parser.parse_args()
 
     # 인자 우선순위: --date/-d -> positional_date -> 오늘 날짜
     target_date_str = args.date or args.positional_date or dt.datetime.now().strftime("%Y%m%d")
 
-    main(target_date_str)
+    main(target_date_str=target_date_str, upload_gcs=args.upload_gcs)
 
