@@ -48,6 +48,7 @@ CHANNEL_URLS = [
     "ss_global_aerospace",
     "growth_semi",
     "aetherjapanresearch",
+    "bumgore",    # 시장이야기 by 제이슨
     "bornlupin",
 ]
 
