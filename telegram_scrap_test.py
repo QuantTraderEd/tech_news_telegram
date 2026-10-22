@@ -50,6 +50,7 @@ CHANNEL_URLS = [
     "aetherjapanresearch",
     "bumgore",    # 시장이야기 by 제이슨
     "bornlupin",
+    "d_ticker",    # 딘스티커
 ]
 
 OUTPUT_DIR = 'data'
