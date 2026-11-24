@@ -47,7 +47,8 @@ CHANNEL_URLS = [
     "samsungpe",
     "ss_global_aerospace",
     "growth_semi",
-    "aetherjapanresearch",
+    # "aetherjapanresearch",    # 채널 종료
+    "aethersemiconductor",
     "bumgore",    # 시장이야기 by 제이슨
     "bornlupin",
     "d_ticker",    # 딘스티커
